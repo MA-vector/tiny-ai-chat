@@ -599,6 +599,17 @@
                     return;
                 }
 
+                // 验证URL格式
+                try {
+                    const url = new URL(this.config.baseUrl);
+                    if (!url.protocol.startsWith('http')) {
+                        throw new Error('URL必须以http://或https://开头');
+                    }
+                } catch (error) {
+                    this.showNotification(`URL格式错误: ${error.message}`, 'error');
+                    return;
+                }
+
                 // 保存到本地
                 localStorage.setItem('tinyAIChatConfig', JSON.stringify(this.config));
 
@@ -615,9 +626,12 @@
                 this.updateStatus('config', '连接中...', 'connecting');
 
                 try {
+                    // 清理Base URL，确保没有多余的斜杠
+                    const cleanBaseUrl = this.config.baseUrl.replace(/\/+$/, '');
+
                     const testUrl = this.config.apiType === 'claude'
-                        ? `${this.config.baseUrl}/v1/messages`
-                        : `${this.config.baseUrl}/v1/chat/completions`;
+                        ? `${cleanBaseUrl}/v1/messages`
+                        : `${cleanBaseUrl}/v1/chat/completions`;
 
                     const response = await fetch(testUrl, {
                         method: 'HEAD',
@@ -636,9 +650,14 @@
                     }
                 } catch (error) {
                     this.isConnected = false;
+                    const errorMsg = error.message.includes('Failed to fetch')
+                        ? '网络连接失败，请检查URL和网络'
+                        : `连接失败: ${error.message}`;
+
                     this.updateStatus('config', '连接失败', 'error');
                     this.updateStatus('chat', '连接失败', 'error');
-                    this.showNotification('连接失败，请检查配置', 'error');
+                    this.showNotification(errorMsg, 'error');
+                    console.error('连接测试失败:', error);
                 }
             }
 
@@ -699,9 +718,12 @@
             }
 
             async makeRequest(message) {
+                // 清理Base URL，确保没有多余的斜杠
+                const cleanBaseUrl = this.config.baseUrl.replace(/\/+$/, '');
+
                 const url = this.config.apiType === 'claude'
-                    ? `${this.config.baseUrl}/v1/messages`
-                    : `${this.config.baseUrl}/v1/chat/completions`;
+                    ? `${cleanBaseUrl}/v1/messages`
+                    : `${cleanBaseUrl}/v1/chat/completions`;
 
                 const headers = {
                     'Authorization': `Bearer ${this.config.apiKey}`,
