@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tiny AI Chat - 极简AI聊天助手</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .app {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+
+        .nav {
+            display: flex;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 15px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: #666;
+        }
+
+        .nav-btn:hover {
+            background: #e9ecef;
+        }
+
+        .nav-btn.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .page {
+            padding: 30px;
+            min-height: 500px;
+        }
+
+        .page.hidden {
+            display: none;
+        }
+
+        /* 配置页面样式 */
+        .config-form {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .api-type {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .api-btn {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .api-btn:hover {
+            border-color: #667eea;
+        }
+
+        .api-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+
+        .submit-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:active {
+            transform: translateY(0);
+        }
+
+        /* 聊天页面样式 */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 500px;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .message.user .message-avatar {
+            background: #667eea;
+            color: white;
+        }
+
+        .message.assistant .message-avatar {
+            background: #28a745;
+            color: white;
+        }
+
+        .message-content {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 18px;
+        }
+
+        .message.user .message-content {
+            background: #667eea;
+            color: white;
+        }
+
+        .message.assistant .message-content {
+            background: white;
+            color: #333;
+            border: 1px solid #e9ecef;
+        }
+
+        .message-text {
+            line-height: 1.5;
+        }
+
+        .chat-input {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input textarea {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 16px;
+            resize: none;
+            min-height: 60px;
+            max-height: 120px;
+        }
+
+        .chat-input textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .send-btn {
+            padding: 0 20px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .send-btn:hover {
+            background: #5a67d8;
+        }
+
+        .send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+        }
+
+        .status-dot.error {
+            background: #dc3545;
+        }
+
+        .status-dot.connecting {
+            background: #ffc107;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 40px 20px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: #28a745;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+
+        .notification.error {
+            background: #dc3545;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        @media (max-width: 600px) {
+            .page {
+                padding: 20px;
+            }
+
+            .message-content {
+                max-width: 80%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>🚀 Tiny AI Chat</h1>
+            <p>极简AI聊天助手 - 支持Claude/OpenAI</p>
+        </div>
+
+        <div class="nav">
+            <button class="nav-btn active" data-page="config">⚙️ 配置</button>
+            <button class="nav-btn" data-page="chat">💬 聊天</button>
+        </div>
+
+        <!-- 配置页面 -->
+        <div class="page" id="config-page">
+            <div class="config-form">
+                <div class="form-group">
+                    <label>API类型</label>
+                    <div class="api-type">
+                        <button type="button" class="api-btn active" data-type="claude">Claude</button>
+                        <button type="button" class="api-btn" data-type="openai">OpenAI</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="baseUrl">Base URL</label>
+                    <input type="text" id="baseUrl" placeholder="https://api.anthropic.com 或 https://api.openai.com">
+                </div>
+
+                <div class="form-group">
+                    <label for="apiKey">API Key</label>
+                    <input type="password" id="apiKey" placeholder="输入您的API密钥">
+                </div>
+
+                <div class="form-group">
+                    <label for="model">模型</label>
+                    <select id="model">
+                        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                        <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                        <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    </select>
+                </div>
+
+                <button class="submit-btn" id="saveConfig">保存配置并开始聊天</button>
+
+                <div class="status" style="margin-top: 20px;">
+                    <div class="status-dot" id="config-status"></div>
+                    <span id="config-status-text">等待配置</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 聊天页面 -->
+        <div class="page hidden" id="chat-page">
+            <div class="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="empty-state">
+                        <p>👋 开始对话吧！</p>
+                    </div>
+                </div>
+
+                <div class="chat-input">
+                    <textarea
+                        id="message-input"
+                        placeholder="输入消息... (Enter发送，Shift+Enter换行)"
+                        rows="1"
+                    ></textarea>
+                    <button class="send-btn" id="send-btn" disabled>发送</button>
+                </div>
+
+                <div class="status">
+                    <div class="status-dot" id="chat-status"></div>
+                    <span id="chat-status-text">未连接</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TinyAIChat {
+            constructor() {
+                this.config = {
+                    apiType: 'claude',
+                    baseUrl: '',
+                    apiKey: '',
+                    model: 'claude-3-5-sonnet-20241022'
+                };
+                this.isConnected = false;
+                this.isSending = false;
+
+                this.init();
+            }
+
+            init() {
+                // 初始化元素
+                this.elements = {
+                    navBtns: document.querySelectorAll('.nav-btn'),
+                    pages: document.querySelectorAll('.page'),
+                    apiBtns: document.querySelectorAll('.api-btn'),
+                    baseUrl: document.getElementById('baseUrl'),
+                    apiKey: document.getElementById('apiKey'),
+                    model: document.getElementById('model'),
+                    saveBtn: document.getElementById('saveConfig'),
+                    chatMessages: document.getElementById('chat-messages'),
+                    messageInput: document.getElementById('message-input'),
+                    sendBtn: document.getElementById('send-btn'),
+                    configStatus: document.getElementById('config-status'),
+                    configStatusText: document.getElementById('config-status-text'),
+                    chatStatus: document.getElementById('chat-status'),
+                    chatStatusText: document.getElementById('chat-status-text')
+                };
+
+                // 加载保存的配置
+                this.loadConfig();
+
+                // 绑定事件
+                this.bindEvents();
+
+                // 更新UI
+                this.updateUI();
+            }
+
+            loadConfig() {
+                const saved = localStorage.getItem('tinyAIChatConfig');
+                if (saved) {
+                    try {
+                        this.config = JSON.parse(saved);
+                        this.updateForm();
+                        this.testConnection();
+                    } catch(e) {
+                        console.log('配置加载失败');
+                    }
+                }
+            }
+
+            updateForm() {
+                // 更新API类型按钮
+                this.elements.apiBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.type === this.config.apiType);
+                });
+
+                // 更新表单字段
+                this.elements.baseUrl.value = this.config.baseUrl || '';
+                this.elements.apiKey.value = this.config.apiKey || '';
+                this.elements.model.value = this.config.model || 'claude-3-5-sonnet-20241022';
+
+                // 更新模型选项
+                this.updateModelOptions();
+            }
+
+            updateModelOptions() {
+                const isClaude = this.config.apiType === 'claude';
+                const current = this.elements.model.value;
+
+                if (isClaude) {
+                    this.elements.model.innerHTML = `
+                        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                        <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+                        <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
+                    `;
+                } else {
+                    this.elements.model.innerHTML = `
+                        <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
+                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                    `;
+                }
+
+                // 保持选择
+                if ([...this.elements.model.options].some(o => o.value === current)) {
+                    this.elements.model.value = current;
+                }
+            }
+
+            bindEvents() {
+                // 导航切换
+                this.elements.navBtns.forEach(btn => {
+                    btn.addEventListener('click', () => this.switchPage(btn.dataset.page));
+                });
+
+                // API类型切换
+                this.elements.apiBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        this.elements.apiBtns.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        this.config.apiType = btn.dataset.type;
+                        this.updateModelOptions();
+                    });
+                });
+
+                // 保存配置
+                this.elements.saveBtn.addEventListener('click', () => this.saveConfig());
+
+                // 发送消息
+                this.elements.sendBtn.addEventListener('click', () => this.sendMessage());
+
+                // 输入框事件
+                this.elements.messageInput.addEventListener('input', () => {
+                    this.adjustTextarea();
+                    this.updateSendButton();
+                });
+
+                this.elements.messageInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (!this.isSending && !this.elements.sendBtn.disabled) {
+                            this.sendMessage();
+                        }
+                    }
+                });
+
+                // 表单变化
+                [this.elements.baseUrl, this.elements.apiKey, this.elements.model].forEach(input => {
+                    input.addEventListener('change', () => this.updateConfigFromForm());
+                });
+            }
+
+            switchPage(page) {
+                // 更新导航
+                this.elements.navBtns.forEach(btn => {
+                    btn.classList.toggle('active', btn.dataset.page === page);
+                });
+
+                // 显示对应页面
+                this.elements.pages.forEach(p => {
+                    p.classList.toggle('hidden', p.id !== `${page}-page`);
+                });
+
+                // 切换到聊天页时自动聚焦输入框
+                if (page === 'chat') {
+                    setTimeout(() => this.elements.messageInput.focus(), 100);
+                }
+            }
+
+            updateConfigFromForm() {
+                this.config.baseUrl = this.elements.baseUrl.value.trim();
+                this.config.apiKey = this.elements.apiKey.value.trim();
+                this.config.model = this.elements.model.value;
+            }
+
+            async saveConfig() {
+                this.updateConfigFromForm();
+
+                if (!this.config.baseUrl || !this.config.apiKey) {
+                    this.showNotification('请填写Base URL和API Key', 'error');
+                    return;
+                }
+
+                // 保存到本地
+                localStorage.setItem('tinyAIChatConfig', JSON.stringify(this.config));
+
+                // 测试连接
+                await this.testConnection();
+
+                if (this.isConnected) {
+                    this.showNotification('配置保存成功！');
+                    this.switchPage('chat');
+                }
+            }
+
+            async testConnection() {
+                this.updateStatus('config', '连接中...', 'connecting');
+
+                try {
+                    const testUrl = this.config.apiType === 'claude'
+                        ? `${this.config.baseUrl}/v1/messages`
+                        : `${this.config.baseUrl}/v1/chat/completions`;
+
+                    const response = await fetch(testUrl, {
+                        method: 'HEAD',
+                        headers: {
+                            'Authorization': `Bearer ${this.config.apiKey}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.status === 200 || response.status === 401) {
+                        this.isConnected = true;
+                        this.updateStatus('config', '已连接', 'connected');
+                        this.updateStatus('chat', '已连接', 'connected');
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    this.isConnected = false;
+                    this.updateStatus('config', '连接失败', 'error');
+                    this.updateStatus('chat', '连接失败', 'error');
+                    this.showNotification('连接失败，请检查配置', 'error');
+                }
+            }
+
+            updateStatus(context, text, type = '') {
+                const statusDot = this.elements[`${context}Status`];
+                const statusText = this.elements[`${context}StatusText`];
+
+                statusText.textContent = text;
+                statusDot.className = 'status-dot';
+
+                if (type === 'connecting') statusDot.classList.add('connecting');
+                if (type === 'error') statusDot.classList.add('error');
+                if (type === 'connected') statusDot.style.background = '#28a745';
+            }
+
+            updateUI() {
+                const hasConfig = this.config.baseUrl && this.config.apiKey;
+                this.elements.sendBtn.disabled = !hasConfig || !this.isConnected || this.isSending;
+            }
+
+            adjustTextarea() {
+                const textarea = this.elements.messageInput;
+                textarea.style.height = 'auto';
+                textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+            }
+
+            updateSendButton() {
+                const hasText = this.elements.messageInput.value.trim().length > 0;
+                this.elements.sendBtn.disabled = !hasText || !this.isConnected || this.isSending;
+            }
+
+            async sendMessage() {
+                const message = this.elements.messageInput.value.trim();
+                if (!message || !this.isConnected || this.isSending) return;
+
+                this.isSending = true;
+                this.updateUI();
+
+                // 添加用户消息
+                this.addMessage(message, 'user');
+                this.elements.messageInput.value = '';
+                this.adjustTextarea();
+                this.updateSendButton();
+
+                // 添加AI回复占位
+                const aiMsgId = this.addMessage('思考中...', 'assistant');
+
+                try {
+                    const response = await this.makeRequest(message);
+                    this.updateMessage(aiMsgId, response);
+                } catch (error) {
+                    this.updateMessage(aiMsgId, `错误: ${error.message}`, true);
+                    this.showNotification('发送失败: ' + error.message, 'error');
+                } finally {
+                    this.isSending = false;
+                    this.updateUI();
+                }
+            }
+
+            async makeRequest(message) {
+                const url = this.config.apiType === 'claude'
+                    ? `${this.config.baseUrl}/v1/messages`
+                    : `${this.config.baseUrl}/v1/chat/completions`;
+
+                const headers = {
+                    'Authorization': `Bearer ${this.config.apiKey}`,
+                    'Content-Type': 'application/json'
+                };
+
+                if (this.config.apiType === 'claude') {
+                    headers['anthropic-version'] = '2023-06-01';
+                }
+
+                const body = this.config.apiType === 'claude' ? {
+                    model: this.config.model,
+                    max_tokens: 4096,
+                    messages: [{ role: 'user', content: message }]
+                } : {
+                    model: this.config.model,
+                    messages: [{ role: 'user', content: message }],
+                    stream: false
+                };
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify(body)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json().catch(() => ({}));
+                    throw new Error(error.error?.message || `HTTP ${response.status}`);
+                }
+
+                const data = await response.json();
+                return this.config.apiType === 'claude'
+                    ? data.content[0]?.text || '无回复'
+                    : data.choices[0]?.message?.content || '无回复';
+            }
+
+            addMessage(text, role) {
+                // 移除空状态
+                const empty = this.elements.chatMessages.querySelector('.empty-state');
+                if (empty) empty.remove();
+
+                const msgId = 'msg_' + Date.now();
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `message ${role}`;
+                msgDiv.id = msgId;
+
+                const avatar = role === 'user' ? '👤' : '🤖';
+                const avatarBg = role === 'user' ? '#667eea' : '#28a745';
+
+                msgDiv.innerHTML = `
+                    <div class="message-avatar" style="background: ${avatarBg}">${avatar}</div>
+                    <div class="message-content">
+                        <div class="message-text">${this.escapeHtml(text)}</div>
+                    </div>
+                `;
+
+                this.elements.chatMessages.appendChild(msgDiv);
+                this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
+
+                return msgId;
+            }
+
+            updateMessage(msgId, content, isError = false) {
+                const msgDiv = document.getElementById(msgId);
+                if (!msgDiv) return;
+
+                const textEl = msgDiv.querySelector('.message-text');
+                if (textEl) {
+                    textEl.innerHTML = this.escapeHtml(content);
+                    if (isError) {
+                        msgDiv.querySelector('.message-content').style.background = '#f8d7da';
+                        msgDiv.querySelector('.message-content').style.color = '#721c24';
+                    }
+                }
+
+                this.elements.chatMessages.scrollTop = this.elements.chatMessages.scrollHeight;
+            }
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML.replace(/\n/g, '<br>');
+            }
+
+            showNotification(message, type = '') {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        }
+
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', () => {
+            window.tinyAIChat = new TinyAIChat();
+        });
+    </script>
+</body>
+</html>
