@@ -331,6 +331,19 @@
             to { transform: translateX(0); opacity: 1; }
         }
 
+        .model-hint {
+            cursor: pointer;
+            color: #667eea;
+            text-decoration: underline;
+            padding: 2px 4px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .model-hint:hover {
+            background: #f0f4ff;
+        }
+
         @media (max-width: 600px) {
             .page {
                 padding: 20px;
@@ -376,13 +389,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="model">模型</label>
-                    <select id="model">
-                        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-                        <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-                        <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    </select>
+                    <label for="model">模型名称</label>
+                    <input type="text" id="model" placeholder="例如: claude-3-5-sonnet-20241022 或 gpt-4-turbo">
+                    <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                        常用模型:
+                        <span class="model-hint" data-model="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</span> |
+                        <span class="model-hint" data-model="claude-3-haiku-20240307">Claude 3 Haiku</span> |
+                        <span class="model-hint" data-model="gpt-4-turbo-preview">GPT-4 Turbo</span> |
+                        <span class="model-hint" data-model="gpt-3.5-turbo">GPT-3.5 Turbo</span>
+                    </div>
                 </div>
 
                 <button class="submit-btn" id="saveConfig">保存配置并开始聊天</button>
@@ -493,26 +508,14 @@
             }
 
             updateModelOptions() {
+                // 现在模型名称由用户自由输入，不需要自动更新选项
+                // 但我们可以更新提示文本
                 const isClaude = this.config.apiType === 'claude';
-                const current = this.elements.model.value;
+                const hintText = isClaude
+                    ? '例如: claude-3-5-sonnet-20241022, claude-3-haiku-20240307, claude-3-opus-20240229'
+                    : '例如: gpt-4-turbo-preview, gpt-4, gpt-3.5-turbo, gpt-3.5-turbo-instruct';
 
-                if (isClaude) {
-                    this.elements.model.innerHTML = `
-                        <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-                        <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
-                        <option value="claude-3-sonnet-20240229">Claude 3 Sonnet</option>
-                    `;
-                } else {
-                    this.elements.model.innerHTML = `
-                        <option value="gpt-4-turbo-preview">GPT-4 Turbo</option>
-                        <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
-                    `;
-                }
-
-                // 保持选择
-                if ([...this.elements.model.options].some(o => o.value === current)) {
-                    this.elements.model.value = current;
-                }
+                this.elements.model.placeholder = hintText;
             }
 
             bindEvents() {
@@ -528,6 +531,13 @@
                         btn.classList.add('active');
                         this.config.apiType = btn.dataset.type;
                         this.updateModelOptions();
+                    });
+                });
+
+                // 模型提示点击
+                document.querySelectorAll('.model-hint').forEach(hint => {
+                    hint.addEventListener('click', () => {
+                        this.elements.model.value = hint.dataset.model;
                     });
                 });
 
